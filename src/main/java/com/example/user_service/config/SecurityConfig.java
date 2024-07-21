@@ -6,10 +6,17 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -18,19 +25,20 @@ public class SecurityConfig {
                 // To be updated later
                 .requestMatchers("/api/users/register").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/users/**").permitAll()
-                .requestMatchers("**").permitAll()
+                .requestMatchers("/api/users/**").authenticated()
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf
-                .disable() // Disable CSRF protection if needed
+                .disable() // Disabling CSRF protection to use postman
             )
             .formLogin(form -> form
                 .disable() // Disable form login
             )
             .logout(logout -> logout
                 .permitAll()
-            );
+            )
+            // Added Authentication filtering for any request other than register or login
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
